@@ -6,6 +6,22 @@ open ManagerRegistry
 
 type SysColor = System.Drawing.Color
 
+(* ECONOMIZER modification BEGIN *)
+open System.Runtime.InteropServices
+[<DllImport("winmm.dll", SetLastError=true)>]
+extern int timeBeginPeriod(int period)
+extern int timeEndPeriod(int period)
+
+let setTimeBeginPeriod (period: int) =
+    let result = timeBeginPeriod period
+    if result <> 0 then
+        failwithf "Failed to set time period. Error code: %d" (Marshal.GetLastWin32Error())
+let setTimeEndPeriod (period: int) =
+    let result = timeEndPeriod period
+    if result <> 0 then
+        failwithf "Failed to end time period. Error code: %d" (Marshal.GetLastWin32Error())
+(* ECONOMIZER modification END *)
+
 (*   Asteriods test program by JPK *)
 
 
@@ -43,7 +59,9 @@ let main argv =
         |> Array.iter (fun t -> ManagerRegistry.addManager(t))
      )
     
+    timeBeginPeriod 1 |> ignore // ECONOMIZER modification for millisecond accurate suspend for power saving
     Asteroids.Start()
+    timeEndPeriod 1 |> ignore // ECONOMIZER modification to return multimedia timer to default granularity
     0 // return an integer exit code
     
    

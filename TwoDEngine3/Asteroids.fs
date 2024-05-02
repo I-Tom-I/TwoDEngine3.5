@@ -89,14 +89,17 @@ let Start() =
                                         img=bigAsteroid } ]
         let mutable explosion = AnimatedImage.createFromFrameCounts explosionSheet 3 1 (float 100) false
         let mutable lastTime = DateTime.Now
+        let mutable frCtrMod3 = 0; // ECONOMIZER modification (integer implementation of 60fps 16.66ms wait)
        
         while window.IsOpen() && not (Key.IsKeyDown Key.ESC) do
             let currentTime = DateTime.Now
             let deltaMS = (currentTime - lastTime).Milliseconds
           
-            if deltaMS >10 then
+            //if deltaMS >10 then // ECONOMIZER modification (10 ms to 16ms for 60FPS instead of 90)
+            if deltaMS > (if (frCtrMod3 <> 0) then 17 else 16) then // ECONOMIZER modification (every 3rd frame use a 16ms wait, otherwise use 17ms)
                // Console.WriteLine ("deltaMS: " + deltaMS.ToString()) |> ignore
                 lastTime <- currentTime
+                frCtrMod3 <- (frCtrMod3 + 1) % 3 // ECONOMIZER modification (Keep track of every 3rd frame)
                 // update state
                 PlayerObj <- Player.Update PlayerObj deltaMS  bulletImage
                 bulletList <- match PlayerObj with
@@ -214,8 +217,11 @@ let Start() =
                           
                                         
                  | _ -> ()
-                window.Show()  
-               
+                window.Show()
+            (* ECONOMIZER modification BEGIN *)
+            else
+                System.Threading.Thread.Sleep(1);
+            (* ECONOMIZER modification END *)
         window.Close()
         ()
             
